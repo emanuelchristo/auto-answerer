@@ -1,99 +1,188 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { tryKeyword } from '../lib/try-keyword'
-
+import { scrapeKeywords } from '../lib/scrape-keywords'
+import { ToastContainer, toast } from 'react-toastify'
+import Head from 'next/head'
 import Keywords from '../components/Keywords'
 import Navbar from '../components/Navbar'
 import Queue from '../components/Queue'
 import Setup from '../components/Setup'
+import Correct from '../components/Correct'
 
 export default function Home() {
-	const [queueKeywords, setQueueKeywords] = useState([
-		{ id: uuidv4(), keyword: 'hola', status: 'tried' },
-		{ id: uuidv4(), keyword: 'bonjur', status: 'pending' },
-		{ id: uuidv4(), keyword: 'oi', status: 'pending' },
-	])
+	const [queueKeywords, setQueueKeywords] = useState([])
 
-	const [setupKeywords, setSetupKeywords] = useState([
-		{ id: uuidv4(), keyword: 'hello' },
-		{ id: uuidv4(), keyword: 'hola' },
-		{ id: uuidv4(), keyword: 'bonjur' },
-		{ id: uuidv4(), keyword: 'oi' },
-	])
+	const [setupKeywords, setSetupKeywords] = useState([])
 
+	const [authToken, setAuthToken] = useState('')
+
+	const [url, setUrl] = useState('')
+	const [cssSelectors, setCssSelectors] = useState('')
+
+	const [delay, setDelay] = useState(0)
 	const [correct, setCorrect] = useState('')
 	const [playing, setPlaying] = useState(false)
 	const [trying, setTrying] = useState('')
-	const [elapsed, setElapsed] = useState(5)
-	const [remaining, setRemaining] = useState(1160)
+	const [elapsed, setElapsed] = useState(0)
+	const [remaining, setRemaining] = useState(0)
+
+	const playQueueEffect = useRef(false)
+	const playingRef = useRef(false)
 
 	useEffect(() => {
-		if (playing) play()
-	}, [playing])
+		let aTkn = window?.localStorage?.getItem('authToken')
+		setAuthToken(aTkn || '')
+	}, [])
+
+	useEffect(() => {
+		playingRef.current = playing
+		if (playQueueEffect.current) {
+			playQueueEffect.current = false
+			if (playing) play()
+		}
+	}, [playing, queueKeywords])
+
+	useEffect(() => {
+		if (correct) toast.success(`Correct answer: ${correct}`)
+	}, [correct])
+
+	useEffect(() => {
+		if (window) {
+			window.localStorage.setItem('authToken', authToken)
+		}
+	}, [authToken])
+
+	function handleScrapeKeywords() {
+		scrapeKeywords(url, cssSelectors).then((keywords) => {
+			let temp = keywords.map((item) => {
+				return {
+					id: uuidv4(),
+					keyword: item,
+				}
+			})
+			setSetupKeywords(temp)
+		})
+	}
 
 	async function play() {
 		if (!playing) return
-		let forBreak = false
+		let complete = true
 		for (let keyword of queueKeywords) {
-			if (keyword.status != 'pending') continue
-			let temp = queueKeywords.map((item) => {
-				if (item.id === keyword.id) return { ...item, status: 'trying' }
-				return item
-			})
-			await setQueueKeywords(temp)
-			let res = await tryKeyword(keyword.keyword)
-			let temp2 = queueKeywords.map((item) => {
-				if (item.id === keyword.id) return { ...item, status: 'tried' }
-				return item
-			})
-			await setQueueKeywords(temp2)
-			forBreak = true
+			if (keyword.status === 'tried') continue
+
+			if (keyword.status === 'pending' && playingRef.current) {
+				playQueueEffect.current = true
+				setTrying(keyword.keyword)
+				setQueueKeywords((queueKeywords) =>
+					queueKeywords.map((item) => {
+						if (item.id === keyword.id) return { ...item, status: 'trying' }
+						return item
+					})
+				)
+			} else if (keyword.status === 'trying') {
+				let res
+				try {
+					res = await tryKeyword(keyword.keyword, authToken, delay)
+				} catch (err) {
+					if (err.message === 'authToken') toast.error('Auth token invalid')
+					else toast.error('Failed to try keyword')
+					setPlaying(false)
+					return
+				}
+
+				if (playingRef.current) {
+					playQueueEffect.current = true
+					setTrying('')
+					setQueueKeywords((queueKeywords) =>
+						queueKeywords.map((item) => {
+							if (item.id === keyword.id) return { ...item, status: 'tried' }
+							return item
+						})
+					)
+					if (res?.correct) {
+						setCorrect(keyword.keyword)
+					}
+				}
+			}
+
+			complete = false
 			break
 		}
-		if (!forBreak) {
-			await setPlaying(false)
-			return
-		}
-		play()
+		if (complete) setPlaying(false)
 	}
 
 	function handleQueueDelete(id) {
-		const temp = queueKeywords.filter((item) => item.id !== id)
-		setQueueKeywords(temp)
+		setQueueKeywords((queueKeywords) => queueKeywords.filter((item) => item.id !== id))
 	}
 	function handleSetupDelete(id) {
-		const temp = setupKeywords.filter((item) => item.id !== id)
-		setSetupKeywords(temp)
+		setSetupKeywords((setupKeywords) => setupKeywords.filter((item) => item.id !== id))
 	}
 	function handleAdd(keyword) {
 		if (!keyword) return
-		const temp = [{ id: uuidv4(), keyword: keyword }, ...setupKeywords]
-		setSetupKeywords(temp)
+		setSetupKeywords((setupKeywords) => [{ id: uuidv4(), keyword: keyword }, ...setupKeywords])
 	}
 	function handleAddToQueue() {
-		const temp = setupKeywords.map((item) => {
-			return { id: item.id, keyword: item.keyword, status: 'pending' }
+		setQueueKeywords((queueKeywords) => {
+			const temp = setupKeywords.map((item) => {
+				return { ...item, status: 'pending' }
+			})
+			return [...queueKeywords, ...temp]
 		})
-		setQueueKeywords([...queueKeywords, ...temp])
 		setSetupKeywords([])
 	}
 
 	function handlePlayPause() {
-		console.log(setPlaying((playing) => !playing))
+		setPlaying((playing) => {
+			if (!playing) playQueueEffect.current = true
+			return !playing
+		})
 	}
 	function handleStop() {
 		setPlaying(false)
+		setQueueKeywords((queueKeywords) =>
+			queueKeywords.map((item) => {
+				return { ...item, status: 'pending' }
+			})
+		)
 	}
 	function handleQueueReset() {
+		setPlaying(false)
 		setQueueKeywords([])
+	}
+
+	function triedCount() {
+		return queueKeywords.filter((item) => item.status === 'tried').length
+	}
+	function queueAllTried() {
+		if (queueKeywords.length === 0) return false
+		for (let keyword of queueKeywords) {
+			if (keyword.status !== 'tried') return false
+		}
+		return true
+	}
+	function pageTitle() {
+		if (correct) return `Correct: ${correct}`
+		if (queueKeywords.length != 0) return `Auto Answerer  ${triedCount()}/${queueKeywords.length}`
+		if (queueAllTried()) return `Auto Answerer - All tried`
+		return 'Auto Answerer'
 	}
 
 	return (
 		<div className='flex flex-col h-screen min-h-fit'>
-			<Navbar />
+			<Head>
+				<title>{pageTitle()}</title>
+			</Head>
+			<Navbar authToken={authToken} onAuthToken={setAuthToken} />
 			<div className='flex flex-1'>
 				<div className={`flex flex-col flex-1 border-right`}>
-					<Setup />
+					<Setup
+						url={url}
+						cssSelectors={cssSelectors}
+						onUrl={setUrl}
+						onCssSelectors={setCssSelectors}
+						onSubmit={handleScrapeKeywords}
+					/>
 					<Keywords
 						keywords={setupKeywords}
 						onAdd={handleAdd}
@@ -102,7 +191,8 @@ export default function Home() {
 						onDelete={handleSetupDelete}
 					/>
 				</div>
-				<div className='flex flex-1'>
+				<div className='flex flex-col flex-1'>
+					{correct && <Correct keyword={correct} onClose={() => setCorrect('')} />}
 					<Queue
 						keywords={queueKeywords}
 						playing={playing}
@@ -116,6 +206,7 @@ export default function Home() {
 					/>
 				</div>
 			</div>
+			<ToastContainer />
 		</div>
 	)
 }

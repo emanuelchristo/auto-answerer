@@ -5,17 +5,23 @@ export default function List({ keywords, onDelete }) {
 	return (
 		<div className={styles['list']}>
 			{keywords.length == 0 && <div className={styles['empty']}>Nothing here</div>}
-			{keywords.length != 0
-				? keywords.map((item, index) => (
-						<ListItem
-							key={item.id}
-							index={index + 1}
-							keyword={item.keyword}
-							status={item.status}
-							onDelete={() => onDelete(item.id)}
-						/>
-				  ))
-				: ''}
+			{keywords.length != 0 ? (
+				<div className={styles['outer-container']}>
+					<div className={styles['scroll-container']}>
+						{keywords.map((item, index) => (
+							<ListItem
+								key={item.id}
+								index={index + 1}
+								keyword={item.keyword}
+								status={item.status}
+								onDelete={() => onDelete(item.id)}
+							/>
+						))}
+					</div>
+				</div>
+			) : (
+				''
+			)}
 		</div>
 	)
 }
