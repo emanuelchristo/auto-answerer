@@ -1,0 +1,10 @@
+input {
+	height: 2.5rem;
+	background-color: var(--input-bg);
+	padding: 0 0.75rem;
+	font-size: 0.875rem;
+	border-radius: var(--radius-md);
+}
+input::placeholder {
+	color: var(--placeholder-color);
+}
