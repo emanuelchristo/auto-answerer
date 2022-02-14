@@ -5,3 +5,7 @@
 * {
 	color: var(--text-dark);
 }
+
+.border-right {
+	border-right: var(--border);
+}
