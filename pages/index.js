@@ -20,6 +20,11 @@ export default function Home() {
 		{ id: uuidv4(), keyword: 'oi' },
 	])
 
+	const [playing, setPlaying] = useState(false)
+	const [trying, setTrying] = useState('')
+	const [elapsed, setElapsed] = useState(5)
+	const [remaining, setRemaining] = useState(1160)
+
 	function handleQueueDelete(id) {
 		const temp = queueKeywords.filter((item) => item.id !== id)
 		setQueueKeywords(temp)
@@ -29,6 +34,7 @@ export default function Home() {
 		setSetupKeywords(temp)
 	}
 	function handleAdd(keyword) {
+		if (!keyword) return
 		const temp = [{ id: uuidv4(), keyword: keyword }, ...setupKeywords]
 		setSetupKeywords(temp)
 	}
@@ -38,6 +44,16 @@ export default function Home() {
 		})
 		setQueueKeywords([...queueKeywords, ...temp])
 		setSetupKeywords([])
+	}
+
+	function handlePlayPause() {
+		setPlaying((playing) => !playing)
+	}
+	function handleStop() {
+		setPlaying(false)
+	}
+	function handleQueueReset() {
+		setQueueKeywords([])
 	}
 
 	return (
@@ -55,7 +71,17 @@ export default function Home() {
 					/>
 				</div>
 				<div className='flex flex-1'>
-					<Queue keywords={queueKeywords} onDelete={handleQueueDelete} />
+					<Queue
+						keywords={queueKeywords}
+						playing={playing}
+						trying={trying}
+						elapsed={elapsed}
+						remaining={remaining}
+						onPlayPause={handlePlayPause}
+						onStop={handleStop}
+						onReset={handleQueueReset}
+						onDelete={handleQueueDelete}
+					/>
 				</div>
 			</div>
 		</div>
