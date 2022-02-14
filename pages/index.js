@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
+import { tryKeyword } from '../lib/try-keyword'
 
 import Keywords from '../components/Keywords'
 import Navbar from '../components/Navbar'
@@ -9,7 +10,7 @@ import Setup from '../components/Setup'
 export default function Home() {
 	const [queueKeywords, setQueueKeywords] = useState([
 		{ id: uuidv4(), keyword: 'hola', status: 'tried' },
-		{ id: uuidv4(), keyword: 'bonjur', status: 'trying' },
+		{ id: uuidv4(), keyword: 'bonjur', status: 'pending' },
 		{ id: uuidv4(), keyword: 'oi', status: 'pending' },
 	])
 
@@ -20,10 +21,41 @@ export default function Home() {
 		{ id: uuidv4(), keyword: 'oi' },
 	])
 
+	const [correct, setCorrect] = useState('')
 	const [playing, setPlaying] = useState(false)
 	const [trying, setTrying] = useState('')
 	const [elapsed, setElapsed] = useState(5)
 	const [remaining, setRemaining] = useState(1160)
+
+	useEffect(() => {
+		if (playing) play()
+	}, [playing])
+
+	async function play() {
+		if (!playing) return
+		let forBreak = false
+		for (let keyword of queueKeywords) {
+			if (keyword.status != 'pending') continue
+			let temp = queueKeywords.map((item) => {
+				if (item.id === keyword.id) return { ...item, status: 'trying' }
+				return item
+			})
+			await setQueueKeywords(temp)
+			let res = await tryKeyword(keyword.keyword)
+			let temp2 = queueKeywords.map((item) => {
+				if (item.id === keyword.id) return { ...item, status: 'tried' }
+				return item
+			})
+			await setQueueKeywords(temp2)
+			forBreak = true
+			break
+		}
+		if (!forBreak) {
+			await setPlaying(false)
+			return
+		}
+		play()
+	}
 
 	function handleQueueDelete(id) {
 		const temp = queueKeywords.filter((item) => item.id !== id)
@@ -47,7 +79,7 @@ export default function Home() {
 	}
 
 	function handlePlayPause() {
-		setPlaying((playing) => !playing)
+		console.log(setPlaying((playing) => !playing))
 	}
 	function handleStop() {
 		setPlaying(false)
