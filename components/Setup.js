@@ -13,7 +13,7 @@ export default function Setup() {
 					<span className='label mb-2'>CSS selectors</span>
 					<input type='text' placeholder='Enter CSS selectors' />
 				</div>
-				<button className='btn-blue'>Submit</button>
+				<button>Submit</button>
 			</div>
 		</div>
 	)
