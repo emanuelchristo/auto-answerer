@@ -2,6 +2,10 @@ h1 {
 	font-size: 1.75rem;
 	font-weight: 600;
 }
+h2 {
+	font-size: 1.5rem;
+	font-weight: 600;
+}
 
 .label {
 	font-size: 0.75rem;
