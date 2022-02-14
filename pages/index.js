@@ -44,7 +44,7 @@ export default function Home() {
 	}, [playing, queueKeywords])
 
 	useEffect(() => {
-		if (correct) toast.success(`Correct answer: ${correct}`)
+		if (correct) toast.success(`Correct: ${correct}`)
 	}, [correct])
 
 	useEffect(() => {
@@ -54,7 +54,7 @@ export default function Home() {
 	}, [authToken])
 
 	function handleScrapeKeywords() {
-		scrapeKeywords(url, cssSelectors).then((keywords) => {
+		let scrape = scrapeKeywords(url, cssSelectors).then((keywords) => {
 			let temp = keywords.map((item) => {
 				return {
 					id: uuidv4(),
@@ -62,6 +62,12 @@ export default function Home() {
 				}
 			})
 			setSetupKeywords(temp)
+		})
+
+		toast.promise(scrape, {
+			pending: 'Scrapping keywords 🛠',
+			success: 'Keywords scraped',
+			error: 'Failed to scrape webpage ❗️',
 		})
 	}
 
@@ -85,8 +91,8 @@ export default function Home() {
 				try {
 					res = await tryKeyword(keyword.keyword, authToken, delay)
 				} catch (err) {
-					if (err.message === 'authToken') toast.error('Auth token invalid')
-					else toast.error('Failed to try keyword')
+					if (err.message === 'authToken') toast.error('Auth token invalid ❗️')
+					else toast.error('Failed to try keyword ⚠️')
 					setPlaying(false)
 					return
 				}
