@@ -1,5 +1,6 @@
 import Keywords from '../components/Keywords'
 import Navbar from '../components/Navbar'
+import Queue from '../components/Queue'
 import Setup from '../components/Setup'
 
 export default function Home() {
@@ -11,7 +12,9 @@ export default function Home() {
 					<Setup />
 					<Keywords />
 				</div>
-				<div className='flex-1'></div>
+				<div className='flex flex-1'>
+					<Queue />
+				</div>
 			</div>
 		</div>
 	)

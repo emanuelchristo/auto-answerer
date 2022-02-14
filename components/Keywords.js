@@ -7,7 +7,7 @@ export default function Keywords() {
 		<div className={styles['keywords']}>
 			<div className='flex items-center mb-4'>
 				<h2 className='mr-3'>Keywords</h2>
-				<div className={styles['num-wrapper']}>0</div>
+				<div className='num-wrapper'>0</div>
 			</div>
 
 			<div className='flex items-center justify-between mb-4'>

@@ -10,3 +10,7 @@ h2 {
 .label {
 	font-size: 0.75rem;
 }
+
+.text-grey {
+	color: var(--text-grey);
+}
