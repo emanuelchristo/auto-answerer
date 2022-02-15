@@ -6,6 +6,8 @@ import styles from './queue.module.css'
 
 export default function Queue({
 	keywords,
+	triedCount,
+	totalCount,
 	playing,
 	trying,
 	elapsed,
@@ -20,7 +22,7 @@ export default function Queue({
 			<div className='flex items-center justify-between mb-4'>
 				<div className='flex items-center'>
 					<h2 className='mr-3'>Queue</h2>
-					<div className='num-wrapper'>{keywords.length}</div>
+					<div className='num-wrapper'>{totalCount}</div>
 				</div>
 
 				<div className='flex items-center'>
@@ -78,9 +80,7 @@ export default function Queue({
 					<div className={styles['trying-keyword']}>
 						{trying ? trying : <span className={styles['trying-placeholder']}>Trying...</span>}
 					</div>
-					<div className={styles['trying-count-wrapper']}>{`${
-						keywords.filter((item) => item.status === 'tried').length
-					} / ${keywords.length}`}</div>
+					<div className={styles['trying-count-wrapper']}>{`${triedCount} / ${totalCount}`}</div>
 				</div>
 				<div className='flex items-center'>
 					<button className='btn-circle btn-blue mr-2' onClick={onPlayPause}>
