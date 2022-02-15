@@ -108,6 +108,7 @@ export default function Home() {
 					)
 					if (res?.correct) {
 						setCorrect(keyword.keyword)
+						setPlaying(false)
 					}
 				}
 			}
